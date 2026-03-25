@@ -45,7 +45,14 @@ def _guess_category(product_name: str) -> str:
 
     n = name.lower()
 
-    vegetables = ("עגב", "מלפ", "פלפל", "גזר", "בצל", "חסה", "כרוב", "קישוא", "חציל", "תפוח אדמה", "שום")
+    # Snack brands/types checked FIRST — must beat vegetable/fruit keyword matches.
+    # e.g. "ביסלי בצל" contains "בצל" but is a snack, not a vegetable.
+    snacks = (
+        "ביסלי", "במבה", "טוגו", "שלייקס", "חטיף", "צ'יפס", "קרקר",
+        "פופקורן", "עוגיה", "עוגי", "וופל", "שוקולד", "ממתק", "סוכריה",
+        "קרמבו", "פצפוצי", "חטיפי", "ארטיק", "ברנע",
+    )
+    vegetables = ("עגבנ", "מלפפ", "פלפל", "גזר", "בצל", "חסה", "כרוב", "קישוא", "חציל", "תפוח אדמה", "שום")
     fruits = ("תפוח", "בננה", "תפוז", "ענב", "מנגו", "אבטיח", "אפרסק", "נקטרינה", "שזיף", "אגס")
     dairy = ("חלב", "גבינה", "יוגורט", "שמנת", "חמאה", "ביצים")
     bakery = ("לחם", "חלה", "פיתה", "פיתות", "בורקס", "בגט")
@@ -57,6 +64,9 @@ def _guess_category(product_name: str) -> str:
     def has_any(tokens: tuple[str, ...]) -> bool:
         return any(t in name for t in tokens) or any(t in n for t in tokens)
 
+    # Snacks before vegetables/fruits to avoid false matches on flavor words
+    if has_any(snacks):
+        return "snacks"
     if has_any(vegetables):
         return "vegetables"
     if has_any(fruits):
