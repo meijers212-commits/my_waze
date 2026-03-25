@@ -76,7 +76,7 @@ class BasketService:
             len(request_data.items),
             len(stores),
         )
-        store_results.sort(key=lambda r: r.total)
+        store_results.sort(key=lambda r: (len(r.missing_items), r.total))
         cheapest = store_results[0].store if store_results else None
         return BasketCompareResponse(results=store_results, cheapest=cheapest)
 
