@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth.js";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const DATA_API_URL = import.meta.env.VITE_DATA_API_URL || "http://localhost:8000";
 
 export default function useProducts() {
   const { token } = useAuth();
@@ -10,16 +10,12 @@ export default function useProducts() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!token) return;
-
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/products`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${DATA_API_URL}/products`);
         const data = await res.json();
-        if (!data.success) throw new Error(data.message || "failed to load products");
+        if (!res.ok) throw new Error(data?.detail || "failed to load products");
         setProducts(data.products || []);
       } catch (err) {
         setError(err.message);

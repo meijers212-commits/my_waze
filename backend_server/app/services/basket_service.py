@@ -10,6 +10,7 @@ from app.models.store import Store
 from app.schemas.basket_schema import (
     BasketCompareRequest,
     BasketCompareResponse,
+    BasketItemResult,
     StoreBasketResult,
 )
 
@@ -28,6 +29,7 @@ class BasketService:
         for store in stores:
             total_price = 0.0
             missing_items: list[str] = []
+            store_items: list[BasketItemResult] = []
 
             for requested_item in request_data.items:
                 latest_unit_price = self._get_latest_unit_price(
@@ -37,14 +39,34 @@ class BasketService:
                 if latest_unit_price is None:
                     total_price += DEFAULT_MISSING_PRICE
                     missing_items.append(requested_item.name)
+                    store_items.append(
+                        BasketItemResult(
+                            name=requested_item.name,
+                            qty=requested_item.quantity,
+                            unit_price=None,
+                            total=0.0,
+                            available=False,
+                        )
+                    )
                     continue
 
-                total_price += latest_unit_price * requested_item.quantity
+                line_total = latest_unit_price * requested_item.quantity
+                total_price += line_total
+                store_items.append(
+                    BasketItemResult(
+                        name=requested_item.name,
+                        qty=requested_item.quantity,
+                        unit_price=round(float(latest_unit_price), 4),
+                        total=round(float(line_total), 2),
+                        available=True,
+                    )
+                )
 
             store_results.append(
                 StoreBasketResult(
                     store=store.name,
-                    total_price=round(total_price, 2),
+                    total=round(total_price, 2),
+                    items=store_items,
                     missing_items=missing_items,
                 )
             )
@@ -54,7 +76,9 @@ class BasketService:
             len(request_data.items),
             len(stores),
         )
-        return BasketCompareResponse(stores=store_results)
+        store_results.sort(key=lambda r: r.total)
+        cheapest = store_results[0].store if store_results else None
+        return BasketCompareResponse(results=store_results, cheapest=cheapest)
 
     def _get_latest_unit_price(self, store_id: int, product_name: str) -> float | None:
         normalized_product_name = self._normalize_name(product_name)

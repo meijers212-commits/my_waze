@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const DATA_API_URL = import.meta.env.VITE_DATA_API_URL || "http://localhost:8000";
 
 export default function useCompare() {
   const [loading, setLoading] = useState(false);
@@ -10,25 +10,21 @@ export default function useCompare() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token") || "";
-
-      const res = await fetch(`${API_URL}/cart/compare`, {
+      const res = await fetch(`${DATA_API_URL}/basket/compare`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          // server_auth expects { items: [{name, qty}] }
-          items: cart.map((i) => ({ name: i.name, qty: i.qty })),
+          items: cart.map((i) => ({ name: i.name, quantity: i.qty })),
         }),
       });
 
       const data = await res.json();
-      if (!data?.success) throw new Error(data?.message || "compare failed");
+      if (!res.ok) throw new Error(data?.detail || "compare failed");
 
       // CompareResultsPage expects compareData shape: { results, cheapest }
-      return data.results;
+      return { results: data.results || [], cheapest: data.cheapest || null };
     } finally {
       setLoading(false);
     }

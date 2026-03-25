@@ -10,12 +10,22 @@ class BasketCompareRequest(BaseModel):
     items: list[BasketItemRequest]
 
 
+class BasketItemResult(BaseModel):
+    name: str
+    qty: float
+    unit_price: float | None = None
+    total: float
+    available: bool
+
+
 class StoreBasketResult(BaseModel):
     store: str
-    total_price: float
+    total: float
+    items: list[BasketItemResult]
     missing_items: list[str]
 
 
 class BasketCompareResponse(BaseModel):
-    stores: list[StoreBasketResult]
+    results: list[StoreBasketResult]
+    cheapest: str | None = None
 
