@@ -11,12 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.basket_routes import router as basket_router
 from app.api.products_routes import router as products_router
 from app.api.receipt_routes import router as receipt_router
-from app.api.sync_routes import router as sync_router
 from app.core.config import settings
 from app.core.constants import LOG_FILE_BACKUP_COUNT, LOG_FILE_MAX_BYTES
-from app.core.scheduler import start_scheduler, stop_scheduler
 from app.database.base import Base
-from app.database.session import SessionLocal, engine
+from app.database.session import engine
 import app.models  # noqa: F401
 
 
@@ -99,17 +97,6 @@ def _run_migrations() -> None:
         )
 
 
-def _weekly_sync_job() -> None:
-    """Scheduled job: runs weekly price sync inside its own DB session."""
-    from app.services.sync_service import SyncService  # noqa: PLC0415
-
-    db = SessionLocal()
-    try:
-        SyncService().run_sync(db)
-    finally:
-        db.close()
-
-
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Run migrations first so every column defined in the SQLAlchemy models
@@ -122,12 +109,10 @@ async def lifespan(_app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables checked/created on startup.")
 
-    start_scheduler(_weekly_sync_job)
     logger.info("Application startup completed.")
 
     yield
 
-    stop_scheduler()
     logger.info("Application shutdown completed.")
 
 
@@ -149,7 +134,6 @@ app.add_middleware(
 app.include_router(receipt_router)
 app.include_router(basket_router)
 app.include_router(products_router)
-app.include_router(sync_router)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
