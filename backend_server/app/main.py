@@ -49,6 +49,56 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 
+def _run_migrations() -> None:
+    """Apply all pending Alembic migrations on startup.
+
+    Handles two scenarios gracefully:
+    1. Fresh DB — Alembic runs all migrations from scratch.
+    2. DB created via create_all (no alembic_version table) — we stamp the
+       initial revision so Alembic knows the base schema already exists, then
+       upgrade to HEAD to apply only the new migrations (e.g. adding columns).
+
+    Uses absolute paths so the app works regardless of the process CWD.
+    """
+    try:
+        from alembic import command as alembic_command  # noqa: PLC0415
+        from alembic.config import Config  # noqa: PLC0415
+
+        backend_dir = Path(__file__).parents[1]  # …/backend_server/
+        alembic_ini = backend_dir / "alembic.ini"
+
+        alembic_cfg = Config(str(alembic_ini))
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+        alembic_cfg.set_main_option("script_location", str(backend_dir / "migrations"))
+
+        # If the DB was bootstrapped with create_all instead of Alembic, the
+        # alembic_version table won't exist.  In that case we stamp the initial
+        # revision (the tables are already there) so the subsequent upgrade only
+        # applies the incremental migrations that are still missing.
+        with engine.connect() as conn:
+            version_table_exists = engine.dialect.has_table(conn, "alembic_version")
+
+        if not version_table_exists:
+            # Check whether the base tables already exist (create_all scenario).
+            with engine.connect() as conn:
+                products_table_exists = engine.dialect.has_table(conn, "products")
+
+            if products_table_exists:
+                logger.info(
+                    "DB was created via create_all (no alembic_version table). "
+                    "Stamping revision 0001_initial_schema before upgrading."
+                )
+                alembic_command.stamp(alembic_cfg, "0001_initial_schema")
+
+        alembic_command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations applied successfully.")
+    except Exception:
+        logger.exception(
+            "Alembic migration failed — the app will start but some endpoints "
+            "may not work correctly until the DB schema is updated."
+        )
+
+
 def _weekly_sync_job() -> None:
     """Scheduled job: runs weekly price sync inside its own DB session."""
     from app.services.sync_service import SyncService  # noqa: PLC0415
@@ -62,6 +112,12 @@ def _weekly_sync_job() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # Run migrations first so every column defined in the SQLAlchemy models
+    # actually exists in the DB before any request handler touches them.
+    _run_migrations()
+
+    # Fallback: create any tables that Alembic migrations don't cover yet
+    # (e.g. a completely fresh DB without an alembic_version table).
     if settings.create_tables_on_startup:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables checked/created on startup.")
