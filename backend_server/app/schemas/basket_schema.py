@@ -28,4 +28,5 @@ class StoreBasketResult(BaseModel):
 class BasketCompareResponse(BaseModel):
     results: list[StoreBasketResult]
     cheapest: str | None = None
+    skipped_items: list[str] = []
 

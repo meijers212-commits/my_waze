@@ -26,12 +26,31 @@ class BasketService:
         stores = self.db_session.scalars(select(Store).order_by(Store.name.asc())).all()
         store_results: list[StoreBasketResult] = []
 
+        # Skip globally: if an item is missing in ANY store, exclude it from ALL stores.
+        skipped_item_names: list[str] = []
+        comparable_items = []
+        for requested_item in request_data.items:
+            has_price_in_all_stores = True
+            for store in stores:
+                latest_unit_price = self._get_latest_unit_price(
+                    store_id=store.id,
+                    product_name=requested_item.name,
+                )
+                if latest_unit_price is None:
+                    has_price_in_all_stores = False
+                    break
+
+            if has_price_in_all_stores:
+                comparable_items.append(requested_item)
+            else:
+                skipped_item_names.append(requested_item.name)
+
         for store in stores:
             total_price = 0.0
             missing_items: list[str] = []
             store_items: list[BasketItemResult] = []
 
-            for requested_item in request_data.items:
+            for requested_item in comparable_items:
                 latest_unit_price = self._get_latest_unit_price(
                     store_id=store.id,
                     product_name=requested_item.name,
@@ -76,9 +95,9 @@ class BasketService:
             len(request_data.items),
             len(stores),
         )
-        store_results.sort(key=lambda r: (len(r.missing_items), r.total))
+        store_results.sort(key=lambda r: r.total)
         cheapest = store_results[0].store if store_results else None
-        return BasketCompareResponse(results=store_results, cheapest=cheapest)
+        return BasketCompareResponse(results=store_results, cheapest=cheapest, skipped_items=skipped_item_names)
 
     def _get_latest_unit_price(self, store_id: int, product_name: str) -> float | None:
         normalized_product_name = self._normalize_name(product_name)
