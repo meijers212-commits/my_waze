@@ -32,12 +32,19 @@ const ScanPage = () => {
   const applyReceiptFile = (nextFile) => {
     if (!nextFile) return;
     setPreview((previousPreview) => {
-      if (previousPreview) {
-        URL.revokeObjectURL(previousPreview);
-      }
+      if (previousPreview) URL.revokeObjectURL(previousPreview);
       return URL.createObjectURL(nextFile);
     });
     setFile(nextFile);
+    setError("");
+  };
+
+  const clearFile = () => {
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setFile(null);
     setError("");
   };
 
@@ -119,8 +126,23 @@ const ScanPage = () => {
         )}
 
         {preview && (
-          <div className="rounded-xl overflow-hidden border border-slate-200">
-            <img src={preview} alt="receipt preview" className="w-full max-h-96 object-contain bg-slate-50" />
+          <div className="relative rounded-xl overflow-hidden border border-slate-200">
+            <img
+              src={preview}
+              alt="receipt preview"
+              className="w-full max-h-96 object-contain bg-slate-50"
+            />
+            {/* X button — clears selection before upload */}
+            <button
+              type="button"
+              onClick={clearFile}
+              aria-label="הסר תמונה"
+              className="absolute top-2 left-2 w-7 h-7 flex items-center justify-center
+                rounded-full bg-slate-800/70 hover:bg-red-600 text-white text-xs
+                transition shadow"
+            >
+              ✕
+            </button>
           </div>
         )}
 

@@ -14,7 +14,7 @@ class Settings:
         "mysql+pymysql://root:root@localhost:3306/grocery_app",
     )
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model_name: str = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
+    gemini_model_name: str = os.getenv("GEMINI_MODEL_NAME", "gemini-3-flash-preview")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     log_file_path: Path = Path(os.getenv("LOG_FILE_PATH", "logs/app.log"))
     create_tables_on_startup: bool = os.getenv("CREATE_TABLES_ON_STARTUP", "true").lower() == "true"
