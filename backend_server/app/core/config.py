@@ -22,10 +22,10 @@ class Settings:
     # התיקון כאן: משתמשים ב-field עם default_factory שמריץ פונקציה אנונימית (lambda)
     cors_allow_origins: list[str] = field(
         default_factory=lambda: [
-            origin.strip()
+            origin.strip().rstrip("/")
             for origin in os.getenv(
                 "CORS_ALLOW_ORIGINS",
-                "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000",
+                "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,https://my-waze.onrender.com",
             ).split(",")
             if origin.strip()
         ]
