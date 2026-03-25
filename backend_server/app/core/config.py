@@ -30,6 +30,10 @@ class Settings:
             if origin.strip()
         ]
     )
+    cors_allow_origin_regex: str | None = os.getenv(
+        "CORS_ALLOW_ORIGIN_REGEX",
+        r"^https://.*\.onrender\.com$",
+    )
 
 settings = Settings()
 
