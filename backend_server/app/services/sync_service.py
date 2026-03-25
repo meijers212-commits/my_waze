@@ -113,9 +113,20 @@ class SyncService:
                 task = ScarpingTask(
                     enabled_scrapers=enabled,
                     files_types=FileTypesFilters.only_price(),
+                    # Single process — safer inside a web-server worker and on
+                    # memory-constrained environments (e.g. Render free tier).
+                    multiprocessing=1,
+                    # Keep status files inside the temp dir so every run starts
+                    # fresh. Without this the library writes to "dumps/status"
+                    # (cwd-relative), marks today's files as "already downloaded",
+                    # and every subsequent run in the same day returns 0 files.
                     output_configuration={
                         "output_mode": "disk",
                         "base_storage_path": dump_dir,
+                    },
+                    status_configuration={
+                        "database_type": "json",
+                        "base_path": f"{dump_dir}/status",
                     },
                 )
                 task.start(limit=limit_per_chain)
@@ -126,7 +137,20 @@ class SyncService:
                 result.finished_at = datetime.utcnow()
                 return result
 
-            logger.info("Download phase complete. Parsing XML files...")
+            # Count downloaded files for diagnostics.
+            downloaded_files = list(Path(dump_dir).rglob("*.gz")) + list(
+                Path(dump_dir).rglob("*.xml")
+            )
+            logger.info(
+                "Download phase complete. Found %s price files. Parsing...",
+                len(downloaded_files),
+            )
+            if not downloaded_files:
+                logger.warning(
+                    "No price files were downloaded. This may indicate that the "
+                    "supermarket sites are geo-blocked or the scraper API changed."
+                )
+
             for entry in self._iter_price_entries(Path(dump_dir)):
                 try:
                     self._upsert_entry(db_session, entry, result)
