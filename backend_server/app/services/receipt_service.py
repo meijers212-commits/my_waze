@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.utils import normalize_product_name
 from app.models.price_history import PriceHistory
 from app.models.product import Product
 from app.models.store import Store
@@ -57,14 +58,31 @@ class ReceiptService:
         return new_store
 
     def _get_or_create_product(self, product_name: str) -> Product:
-        normalized_product_name = self._normalize_name(product_name)
-        existing_product = self.db_session.scalar(
-            select(Product).where(Product.name == normalized_product_name)
-        )
-        if existing_product:
-            return existing_product
+        canonical = normalize_product_name(product_name)
 
-        new_product = Product(name=normalized_product_name)
+        # 1. Match by canonical_name — finds products that arrived via sync or
+        #    prior receipts even when the spelling differs slightly.
+        if canonical:
+            existing = self.db_session.scalar(
+                select(Product).where(Product.canonical_name == canonical)
+            )
+            if existing:
+                return existing
+
+        # 2. Fall back to exact normalized name match (covers products created
+        #    before canonical_name was introduced).
+        normalized = self._normalize_name(product_name)
+        existing = self.db_session.scalar(
+            select(Product).where(Product.name == normalized)
+        )
+        if existing:
+            if existing.canonical_name is None and canonical:
+                existing.canonical_name = canonical
+                self.db_session.flush()
+            return existing
+
+        # 3. Create new product from this receipt.
+        new_product = Product(name=normalized, canonical_name=canonical, source="receipt")
         self.db_session.add(new_product)
         self.db_session.flush()
         return new_product
