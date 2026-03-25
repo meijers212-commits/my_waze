@@ -1,7 +1,7 @@
 // App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
-import AuthPage from "./pages/AuthPage.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
+import AuthPage from "./Pages/AuthPage.jsx";
+import Dashboard from "./Pages/Dashboard.jsx";
 import CartPage from "./Pages/CartPage.jsx";
 import CompareResultsPage from "./Pages/CompareResultsPage.jsx";
 import ScanPage from "./Pages/ScanPage.jsx";
