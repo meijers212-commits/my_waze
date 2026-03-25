@@ -4,5 +4,16 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
+  // הגדרת ה-base כסלאש מבטיחה שהנתיבים לקבצי ה-assets (CSS/JS) 
+  // תמיד יתחילו מהשורש של הדומיין ולא מהנתיב הנוכחי (כמו /login/)
+  base: '/',
+  plugins: [
+    react(),
+    tailwindcss()
+  ],
+  build: {
+    // זה מבטיח שה-assets יישמרו בתיקייה תקנית בתוך dist
+    outDir: 'dist',
+    assetsDir: 'assets',
+  }
 })
