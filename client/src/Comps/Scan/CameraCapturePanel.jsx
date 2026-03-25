@@ -10,15 +10,17 @@ const CameraCapturePanel = ({ stream, onCapture, onCancel }) => {
 
   return (
     <div className="bg-slate-950 text-white rounded-xl p-4 space-y-3">
-      <div className="rounded-lg overflow-hidden bg-black border border-slate-700">
+      <p className="text-xs text-slate-400 text-center">מקמו את הקבלה בתוך המסגרת</p>
+      <div className="relative rounded-lg overflow-hidden bg-black border border-slate-700 mx-auto w-full max-w-xs aspect-[3/4]">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="w-full max-h-96 object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           aria-label="camera preview"
         />
+        <div className="absolute inset-3 border-2 border-emerald-400 border-dashed rounded-md opacity-60 pointer-events-none" />
       </div>
       <div className="flex gap-3">
         <button

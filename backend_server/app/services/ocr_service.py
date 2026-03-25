@@ -10,25 +10,45 @@ from app.core.config import settings
 from app.schemas.receipt_schema import ReceiptExtracted
 
 
-HEBREW_RECEIPT_PROMPT = """אתה מנתח קבלות בעברית.
+RECEIPT_EXTRACTION_PROMPT = """You are a receipt parser specializing in Hebrew grocery receipts.
 
-החזר JSON בלבד בפורמט:
+Return ONLY valid JSON — no markdown, no explanation, just the JSON object.
 
+Required format:
 {
-  "store_name": "...",
+  "store_name": "string",
   "date": "YYYY-MM-DD",
   "items": [
     {
-      "name": "...",
+      "name": "string (in Hebrew exactly as printed on receipt)",
       "quantity": number,
       "total_price": number,
-      "unit_price": number
+      "unit_price": number,
+      "category": "string"
     }
   ]
 }
 
-כל הטקסט הוא בעברית.
-אם יש הנחות, כלול אותן במחיר הכולל של המוצר.
+Category must be exactly one of:
+  vegetables, fruits, dairy, bakery, dry, meat, frozen, cleaning, snacks, general
+
+Category classification rules — classify by what the product IS, not by its flavor or ingredients:
+  - Flavored snacks (ביסלי, במבה, חטיפים, קרקרים, צ'יפס) → snacks, even if the flavor is a vegetable or fruit
+  - Actual vegetables sold as produce (עגבנייה, מלפפון, בצל, גזר, פלפל) → vegetables
+  - Actual fruits sold as produce (תפוח, בננה, תפוז, ענבים) → fruits
+  - Packaged dairy (חלב, גבינה, יוגורט, שמנת, ביצים) → dairy
+  - Bread and baked goods (לחם, חלה, פיתה, בורקס) → bakery
+  - Dry goods and pantry (אורז, פסטה, קמח, שמן, קפה, מיץ קופסה) → dry
+  - Meat and fish (עוף, בשר, דג, הודו) → meat
+  - Frozen products (קפוא, גלידה) → frozen
+  - Household and hygiene (סבון, שמפו, אקונומיקה, מרכך, ניקוי) → cleaning
+  - Anything else → general
+
+Additional rules:
+  - If discounts are applied, include them in the item's total_price (net price after discount).
+  - quantity is the number of units purchased (default 1 if not shown).
+  - unit_price = total_price / quantity (calculate if not explicitly shown).
+  - If date is not visible, use today's date.
 """
 
 
@@ -46,7 +66,7 @@ class OCRService:
             response = self.client.models.generate_content(
                 model=settings.gemini_model_name,
                 contents=[
-                    HEBREW_RECEIPT_PROMPT,
+                    RECEIPT_EXTRACTION_PROMPT,
                     types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 ],
             )

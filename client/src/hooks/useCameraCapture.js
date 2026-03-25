@@ -57,7 +57,12 @@ export const useCameraCapture = () => {
 
     try {
       const nextStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          aspectRatio: { ideal: 3 / 4 },
+          width: { ideal: 1080 },
+          height: { ideal: 1440 },
+        },
         audio: false,
       });
       setStream(nextStream);
