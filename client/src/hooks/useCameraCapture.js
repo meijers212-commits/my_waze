@@ -5,6 +5,7 @@ const createReceiptFileFromVideo = async (videoElement) => {
     throw new Error("camera_not_ready");
   }
 
+  // Capture at full native resolution for best OCR quality
   const canvas = document.createElement("canvas");
   canvas.width = videoElement.videoWidth;
   canvas.height = videoElement.videoHeight;
@@ -14,10 +15,13 @@ const createReceiptFileFromVideo = async (videoElement) => {
     throw new Error("canvas_unavailable");
   }
 
+  // Sharpen rendering for text-heavy images
+  context.imageSmoothingEnabled = false;
   context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
+  // High quality JPEG for OCR accuracy
   const blob = await new Promise((resolve) => {
-    canvas.toBlob(resolve, "image/jpeg", 0.9);
+    canvas.toBlob(resolve, "image/jpeg", 0.95);
   });
 
   if (!blob) {
@@ -58,13 +62,31 @@ export const useCameraCapture = () => {
     try {
       const nextStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "environment",
-          aspectRatio: { ideal: 3 / 4 },
-          width: { ideal: 1080 },
-          height: { ideal: 1440 },
+          facingMode: { ideal: "environment" },
+          // Portrait ratio for tall receipts (6:9 = 2:3)
+          aspectRatio: { ideal: 2 / 3 },
+          width: { ideal: 1080, min: 720 },
+          height: { ideal: 1620, min: 960 },
         },
         audio: false,
       });
+
+      // Enable continuous auto-focus for close-up text if the browser supports it
+      const [videoTrack] = nextStream.getVideoTracks();
+      if (videoTrack?.applyConstraints) {
+        try {
+          await videoTrack.applyConstraints({
+            advanced: [
+              { focusMode: "continuous" },
+              { whiteBalanceMode: "continuous" },
+              { exposureMode: "continuous" },
+            ],
+          });
+        } catch {
+          // Advanced constraints not supported on all browsers — ignore silently
+        }
+      }
+
       setStream(nextStream);
       setIsOpen(true);
     } catch {

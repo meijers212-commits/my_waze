@@ -1,6 +1,3 @@
-from sqlalchemy.orm.session import Session
-
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 

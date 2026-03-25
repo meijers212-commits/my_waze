@@ -60,8 +60,8 @@ class ReceiptService:
     def _get_or_create_product(self, product_name: str) -> Product:
         canonical = normalize_product_name(product_name)
 
-        # 1. Match by canonical_name — finds products that arrived via sync or
-        #    prior receipts even when the spelling differs slightly.
+        # 1. Match by canonical_name — finds products from prior receipts
+        #    even when the spelling differs slightly.
         if canonical:
             existing = self.db_session.scalar(
                 select(Product).where(Product.canonical_name == canonical)
