@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CameraCapturePanel from "../Comps/Scan/CameraCapturePanel.jsx";
+import { useCameraCapture } from "../hooks/useCameraCapture.js";
 
 const DATA_API_URL = import.meta.env.VITE_DATA_API_URL || "http://localhost:8000";
 
@@ -9,13 +11,48 @@ const ScanPage = () => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const {
+    stream,
+    isOpen: isCameraOpen,
+    error: cameraError,
+    loading: cameraLoading,
+    openCamera,
+    closeCamera,
+    capturePhoto,
+  } = useCameraCapture();
+
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
+  const applyReceiptFile = (nextFile) => {
+    if (!nextFile) return;
+    setPreview((previousPreview) => {
+      if (previousPreview) {
+        URL.revokeObjectURL(previousPreview);
+      }
+      return URL.createObjectURL(nextFile);
+    });
+    setFile(nextFile);
+    setError("");
+  };
 
   const onSelectFile = (event) => {
     const selectedFile = event.target.files?.[0];
-    if (!selectedFile) return;
-    setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
-    setError("");
+    applyReceiptFile(selectedFile);
+  };
+
+  const onCapture = async (videoElement) => {
+    try {
+      const capturedFile = await capturePhoto(videoElement);
+      applyReceiptFile(capturedFile);
+    } catch {
+      setError("לא הצלחנו לצלם כרגע. אפשר לנסות שוב או להעלות תמונה.");
+    }
   };
 
   const onUpload = async () => {
@@ -59,11 +96,27 @@ const ScanPage = () => {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-        <label className="block w-full border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 transition">
-          <input type="file" accept="image/*" className="hidden" onChange={onSelectFile} />
-          <span className="text-sm font-medium text-slate-700">בחר תמונת קבלה</span>
-          <p className="text-xs text-slate-400 mt-1">PNG / JPG / WEBP</p>
-        </label>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <label className="block w-full border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer hover:bg-slate-50 transition">
+            <input type="file" accept="image/*" className="hidden" onChange={onSelectFile} />
+            <span className="text-sm font-medium text-slate-700">בחר תמונת קבלה</span>
+            <p className="text-xs text-slate-400 mt-1">PNG / JPG / WEBP</p>
+          </label>
+
+          <button
+            type="button"
+            onClick={openCamera}
+            disabled={cameraLoading}
+            className="w-full border-2 border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 transition disabled:opacity-60"
+          >
+            <span className="text-sm font-medium text-slate-700">{cameraLoading ? "פותח מצלמה..." : "צלם קבלה"}</span>
+            <p className="text-xs text-slate-400 mt-1">פתיחה ישירה של המצלמה לצילום</p>
+          </button>
+        </div>
+
+        {isCameraOpen && (
+          <CameraCapturePanel stream={stream} onCapture={onCapture} onCancel={closeCamera} />
+        )}
 
         {preview && (
           <div className="rounded-xl overflow-hidden border border-slate-200">
@@ -71,7 +124,9 @@ const ScanPage = () => {
           </div>
         )}
 
-        {error && <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{error}</p>}
+        {(error || cameraError) && (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{error || cameraError}</p>
+        )}
 
         <div className="flex gap-3">
           <button

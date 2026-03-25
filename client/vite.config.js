@@ -15,5 +15,10 @@ export default defineConfig({
     // זה מבטיח שה-assets יישמרו בתיקייה תקנית בתוך dist
     outDir: 'dist',
     assetsDir: 'assets',
-  }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setupTests.js',
+    globals: true,
+  },
 })
