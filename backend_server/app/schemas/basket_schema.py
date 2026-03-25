@@ -8,6 +8,7 @@ class BasketItemRequest(BaseModel):
 
 class BasketCompareRequest(BaseModel):
     items: list[BasketItemRequest]
+    baseline_store: str | None = None
 
 
 class BasketItemResult(BaseModel):
@@ -16,6 +17,7 @@ class BasketItemResult(BaseModel):
     unit_price: float | None = None
     total: float
     available: bool
+    estimated: bool = False
 
 
 class StoreBasketResult(BaseModel):

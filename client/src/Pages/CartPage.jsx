@@ -70,7 +70,7 @@ const CartPage = () => {
 
   // ── השוואת מחירים → עובר לדף תוצאות ──────────────────
   const handleCompare = async () => {
-    const data = await compare(cart);
+    const data = await compare(cart, selectedStore);
     if (data) {
       navigate("/compare", { state: { compareData: data } });
     }

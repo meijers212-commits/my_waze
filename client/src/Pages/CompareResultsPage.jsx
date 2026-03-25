@@ -85,7 +85,11 @@ const CompareResultsPage = () => {
                             ₪{(it.total ?? 0).toFixed(2)}
                           </td>
                           <td className="py-2 text-sm">
-                            {it.available ? (
+                            {it.estimated ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                                הערכה
+                              </span>
+                            ) : it.available ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                                 זמין
                               </span>
