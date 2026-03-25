@@ -80,7 +80,9 @@ const CompareResultsPage = () => {
                       {store.items.map((it, idx) => (
                         <tr key={`${it.name}-${idx}`} className="border-t border-slate-100">
                           <td className="py-2 text-sm text-slate-800">{it.name}</td>
-                          <td className="py-2 text-sm text-slate-700">{it.qty}</td>
+                          <td className="py-2 text-sm text-slate-700">
+                            {parseFloat(it.qty.toFixed(3))}
+                          </td>
                           <td className="py-2 text-sm font-semibold text-slate-900">
                             ₪{(it.total ?? 0).toFixed(2)}
                           </td>

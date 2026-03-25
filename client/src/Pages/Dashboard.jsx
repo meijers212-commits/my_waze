@@ -6,6 +6,7 @@
 import NavCard from "../Comps/Dashboard/NavCard.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import PopularProducts from "../Comps/Dashboard/PopularProducts.jsx";
+import PriceSyncCard from "../Comps/Dashboard/PriceSyncCard.jsx";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -135,6 +136,9 @@ const Dashboard = () => {
             subtitle="צפה ונהל את הסל שלך"
           />
         </div>
+
+        {/* סינכרון מחירים מרשתות */}
+        <PriceSyncCard />
 
         {/* טבלת מוצרים פופולריים */}
         <PopularProducts />

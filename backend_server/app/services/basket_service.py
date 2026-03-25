@@ -66,7 +66,11 @@ class BasketService:
                 skipped_item_names.append(requested_item.name)
                 continue
 
+            # Skip items whose only known prices are zero (coupons, discounts, etc.)
             max_known = max(known_prices)
+            if max_known <= 0:
+                skipped_item_names.append(requested_item.name)
+                continue
             fallback_unit_price_by_item[requested_item.name] = round(max_known * (1 + MISSING_PRICE_PENALTY_RATE), 4)
 
         comparable_items = [it for it in comparable_items if it.name in fallback_unit_price_by_item]
