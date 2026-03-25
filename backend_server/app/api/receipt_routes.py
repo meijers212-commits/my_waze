@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -37,7 +38,8 @@ async def upload_receipt(
     ocr_service = OCRService()
     receipt_service = ReceiptService(db_session)
 
-    extracted_receipt = ocr_service.extract(
+    extracted_receipt = await asyncio.to_thread(
+        ocr_service.extract,
         image_bytes=image_bytes,
         mime_type=file.content_type,
     )
