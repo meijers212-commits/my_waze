@@ -6,13 +6,13 @@ const CompareResultsPage = () => {
   const { state } = useLocation();
 
   const compareData = state?.compareData;
-  const results = compareData?.results || [];
   const cheapest = compareData?.cheapest || null;
 
   const storesSorted = useMemo(() => {
+    const results = compareData?.results || [];
     // If backend sends already sorted, this is a no-op.
     return [...results].sort((a, b) => (a.total ?? 0) - (b.total ?? 0));
-  }, [results]);
+  }, [compareData]);
 
   if (!compareData) {
     return (

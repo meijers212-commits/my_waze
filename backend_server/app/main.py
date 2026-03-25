@@ -2,6 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -70,4 +71,5 @@ def on_startup() -> None:
     logger.info("Application startup completed.")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -32,3 +32,9 @@ dist-ssr
 # Build output
 build
 *.tsbuildinfo
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
